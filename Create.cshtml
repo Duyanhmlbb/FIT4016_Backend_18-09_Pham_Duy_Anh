@@ -1,0 +1,235 @@
+@model OrderManagementApp.Models.ViewModels.OrderViewModel
+
+@{
+    ViewData["Title"] = "Create New Order";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">@ViewData["Title"]</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Success/Error Messages -->
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Create" id="createForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="row">
+                            <!-- Order Number -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="OrderNumber" class="form-label"></label>
+                                <input asp-for="OrderNumber" class="form-control" readonly />
+                                <span asp-validation-for="OrderNumber" class="text-danger small"></span>
+                                <small class="form-text text-muted">Auto-generated order number</small>
+                            </div>
+
+                            <!-- Order Date -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="OrderDate" class="form-label"></label>
+                                <input asp-for="OrderDate" type="date" class="form-control" 
+                                       max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="OrderDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Customer Name -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CustomerName" class="form-label"></label>
+                                <input asp-for="CustomerName" class="form-control" 
+                                       placeholder="Enter customer name" />
+                                <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Customer Email -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CustomerEmail" class="form-label"></label>
+                                <input asp-for="CustomerEmail" type="email" class="form-control" 
+                                       placeholder="customer@example.com" />
+                                <span asp-validation-for="CustomerEmail" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Product Selection -->
+                        <div class="mb-3">
+                            <label asp-for="ProductId" class="form-label"></label>
+                            <select asp-for="ProductId" asp-items="Model.Products" 
+                                    class="form-select" id="productSelect">
+                                <option value="">-- Select a Product --</option>
+                            </select>
+                            <span asp-validation-for="ProductId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Product Info Display -->
+                        <div id="productInfo" class="alert alert-info d-none mb-3">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Name:</strong> <span id="productName">-</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Price:</strong> $<span id="productPrice">0.00</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Stock:</strong> <span id="productStock">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Quantity -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Quantity" class="form-label"></label>
+                                <input asp-for="Quantity" type="number" class="form-control" 
+                                       min="1" value="1" id="quantityInput" />
+                                <span asp-validation-for="Quantity" class="text-danger small"></span>
+                                <div id="quantityWarning" class="text-warning small mt-1 d-none">
+                                    <i class="bi bi-exclamation-triangle"></i> 
+                                    <span id="stockMessage"></span>
+                                </div>
+                            </div>
+
+                            <!-- Delivery Date -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DeliveryDate" class="form-label"></label>
+                                <input asp-for="DeliveryDate" type="date" class="form-control" 
+                                       min="@Model.OrderDate.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="DeliveryDate" class="text-danger small"></span>
+                                <small class="form-text text-muted">Optional. Must be after order date.</small>
+                            </div>
+                        </div>
+
+                        <!-- Total Price -->
+                        <div class="alert alert-success mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>Total Price:</strong>
+                                <h4 class="mb-0" id="totalPrice">$0.00</h4>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to List
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Order
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script>
+        document.getElementById('productSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const optionText = selectedOption.text;
+            
+            if (optionText && optionText.includes('Stock:')) {
+                const nameMatch = optionText.match(/(.+?)\s*\(/);
+                const stockMatch = optionText.match(/Stock:\s*(\d+)/);
+                const priceMatch = optionText.match(/Price:\s*\$([\d.]+)/);
+                
+                if (nameMatch && stockMatch && priceMatch) {
+                    const productName = nameMatch[1];
+                    const stock = parseInt(stockMatch[1]);
+                    const price = parseFloat(priceMatch[1]);
+                    
+                    document.getElementById('productName').textContent = productName;
+                    document.getElementById('productPrice').textContent = price.toFixed(2);
+                    document.getElementById('productStock').textContent = stock;
+                    document.getElementById('productInfo').classList.remove('d-none');
+                    
+                    const quantityInput = document.getElementById('quantityInput');
+                    quantityInput.max = stock;
+                    
+                    updateTotalPrice(price, parseInt(quantityInput.value) || 1);
+                    checkQuantity(parseInt(quantityInput.value) || 1, stock);
+                }
+            } else {
+                document.getElementById('productInfo').classList.add('d-none');
+                document.getElementById('totalPrice').textContent = '$0.00';
+                document.getElementById('quantityWarning').classList.add('d-none');
+            }
+        });
+
+        document.getElementById('quantityInput').addEventListener('input', function() {
+            const productSelect = document.getElementById('productSelect');
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const optionText = selectedOption.text;
+            
+            if (optionText && optionText.includes('Price:')) {
+                const priceMatch = optionText.match(/Price:\s*\$([\d.]+)/);
+                const stockMatch = optionText.match(/Stock:\s*(\d+)/);
+                
+                if (priceMatch && stockMatch) {
+                    const price = parseFloat(priceMatch[1]);
+                    const stock = parseInt(stockMatch[1]);
+                    const quantity = parseInt(this.value) || 0;
+                    
+                    checkQuantity(quantity, stock);
+                    updateTotalPrice(price, quantity);
+                }
+            }
+        });
+
+        function checkQuantity(quantity, stock) {
+            const warning = document.getElementById('quantityWarning');
+            const message = document.getElementById('stockMessage');
+            
+            if (quantity > stock) {
+                message.textContent = `Quantity (${quantity}) exceeds available stock (${stock})`;
+                warning.classList.remove('d-none');
+                return false;
+            } else if (quantity === stock) {
+                message.textContent = `Warning: Using all available stock (${stock})`;
+                warning.classList.remove('d-none');
+                return true;
+            } else {
+                warning.classList.add('d-none');
+                return true;
+            }
+        }
+
+        function updateTotalPrice(price, quantity) {
+            const total = price * quantity;
+            document.getElementById('totalPrice').textContent = '$' + total.toFixed(2);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const orderDateInput = document.querySelector('input[name="OrderDate"]');
+            const deliveryDateInput = document.querySelector('input[name="DeliveryDate"]');
+            
+            if (orderDateInput) {
+                orderDateInput.max = today;
+                orderDateInput.value = today;
+                
+                if (deliveryDateInput) {
+                    deliveryDateInput.min = today;
+                    
+                    orderDateInput.addEventListener('change', function() {
+                        deliveryDateInput.min = this.value;
+                        if (deliveryDateInput.value && deliveryDateInput.value < this.value) {
+                            deliveryDateInput.value = this.value;
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+}

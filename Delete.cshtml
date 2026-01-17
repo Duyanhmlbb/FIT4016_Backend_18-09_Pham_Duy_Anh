@@ -1,0 +1,140 @@
+@model OrderManagementApp.Models.ViewModels.OrderViewModel
+
+@{
+    ViewData["Title"] = "Delete Order";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="mb-0"><i class="bi bi-exclamation-triangle"></i> @ViewData["Title"]</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Warning Message -->
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading"><i class="bi bi-exclamation-octagon"></i> Warning!</h4>
+                        <p>You are about to delete this order. This action cannot be undone.</p>
+                        <hr>
+                        <p class="mb-0">Please review the order details below before confirming deletion.</p>
+                    </div>
+
+                    <!-- Order Details -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Order Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <strong>Order Number:</strong><br>
+                                    <span class="text-primary">@Model.OrderNumber</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong>Status:</strong><br>
+                                    @if (Model.DeliveryDate.HasValue)
+                                    {
+                                        <span class="badge bg-success">Delivered</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Pending</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <strong>Customer Name:</strong><br>
+                                    @Model.CustomerName
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong>Customer Email:</strong><br>
+                                    <a href="mailto:@Model.CustomerEmail">@Model.CustomerEmail</a>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <strong>Product:</strong><br>
+                                    @Model.ProductName
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <strong>Quantity:</strong><br>
+                                    <span class="badge bg-secondary">@Model.Quantity</span>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <strong>Total Price:</strong><br>
+                                    <span class="text-success">$@(Model.TotalPrice?.ToString("F2") ?? "0.00")</span>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <strong>Order Date:</strong><br>
+                                    @Model.OrderDate.ToString("yyyy-MM-dd")
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong>Delivery Date:</strong><br>
+                                    @(Model.DeliveryDate?.ToString("yyyy-MM-dd") ?? "Not delivered")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deletion Impact -->
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-info-circle"></i> What will be deleted?</h6>
+                        <ul class="mb-0">
+                            <li>This order record will be permanently removed from the database</li>
+                            <li>Product stock will NOT be restored automatically</li>
+                            <li>This action will NOT affect the product record</li>
+                            <li>Customer information will be lost</li>
+                        </ul>
+                    </div>
+
+                    <!-- Delete Form -->
+                    <form asp-action="Delete" method="post" id="deleteForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel & Back to List
+                            </a>
+                            <button type="submit" class="btn btn-danger" 
+                                    onclick="return confirmDelete()" id="deleteButton">
+                                <i class="bi bi-trash"></i> Confirm Delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"></script>
+    <script>
+        function confirmDelete() {
+            // Double confirmation
+            const confirmed = confirm('⚠️ ARE YOU SURE?\n\nThis will permanently delete the order:\n"@Model.OrderNumber"\n\nThis action cannot be undone!');
+            
+            if (confirmed) {
+                // Disable button to prevent double click
+                const deleteBtn = document.getElementById('deleteButton');
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Deleting...';
+                return true;
+            }
+            return false;
+        }
+
+        // Prevent form resubmission
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
+}
