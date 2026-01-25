@@ -1,4 +1,4 @@
-namespace OrderManagementApp.Models;
+namespace PostManagementApp.Models;
 
 public class ErrorViewModel
 {

@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using OrderManagementApp.Models;
+using PostManagementApp.Models;
 
-namespace OrderManagementApp.Controllers;
+namespace PostManagementApp.Controllers;
 
 public class HomeController : Controller
 {
